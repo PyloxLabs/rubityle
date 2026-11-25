@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  rubityle:
+    build: .
+    container_name: rubityle
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Must be a host bind mount (not a named volume): the daemon creates game
+      # server containers with Binds "/var/lib/rubityle/<uuid>:/home/container",
+      # and Docker resolves that path on the host. A named volume would store
+      # data at a different host path, so the daemon and game containers would
+      # see different files.
+      - /var/lib/rubityle:/var/lib/rubityle
+      - /var/log/rubityle:/var/log/rubityle
+    environment:
+      - DAEMON_PORT=8080
+      - DAEMON_TOKEN=${DAEMON_TOKEN:-change-me-token}
+      - PANEL_URL=${PANEL_URL:-http://localhost:7956}
+      - PANEL_API_KEY=${PANEL_API_KEY:-}
+      - DOCKER_SOCKET=/var/run/docker.sock
+      - DOCKER_NETWORK=pylox-servers
+      - DATA_DIR=/var/lib/rubityle
+      - LOG_DIR=/var/log/rubityle
+      - RESOURCE_LIMIT_GRACE_SECONDS=${RESOURCE_LIMIT_GRACE_SECONDS:-600}
+      - RESOURCE_MONITOR_INTERVAL_SECONDS=${RESOURCE_MONITOR_INTERVAL_SECONDS:-15}
+    networks:
+      - pylox-internal
+
+networks:
+  pylox-internal:
+    driver: bridge
+    name: pylox-servers
+
+volumes: {}
